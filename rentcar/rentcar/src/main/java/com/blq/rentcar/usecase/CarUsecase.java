@@ -1,6 +1,8 @@
 package com.blq.rentcar.usecase;
 
 import com.blq.rentcar.models.Car;
+import com.blq.rentcar.models.response.CarsDto;
+import com.blq.rentcar.models.response.PersonsDto;
 import com.blq.rentcar.models.response.ResponseInfo;
 import com.blq.rentcar.repository.CarRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,12 +12,13 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 public class CarUsecase {
 
     @Autowired
-    public CarRepository carRepository;
+    private CarRepository carRepository;
 
     public ResponseInfo<Object> addCar(Car car)
     {
@@ -26,16 +29,15 @@ public class CarUsecase {
             car.setCreatedDate(Date.from(Instant.now()));
             car.setIsActive(true);
 
-            Car personData = this.carRepository.save(car);
+            Car carData = this.carRepository.save(car);
 
-            if(personData.equals(car))
-            {
+            if (carData.getId() != null) {
                 responseInfo.setSuccess();
-            }
-            else
-            {
+            } else {
                 responseInfo.setBadRequestException("Save failed, kindly check your request");
             }
+
+            responseInfo.setSuccess();
         }
         catch (Exception e)
         {
@@ -52,7 +54,14 @@ public class CarUsecase {
         {
             List<Car> cars = this.carRepository.findByIsActive(true);
 
-            responseInfo.setSuccess(cars);
+            List<CarsDto> carsDtos = cars.stream()
+                    .map(car -> new CarsDto(
+                            car.getBrand(),
+                            car.getModel(),
+                            car.getYear()))
+                    .collect(Collectors.toList());
+
+            responseInfo.setSuccess(carsDtos);
         }
         catch (Exception e)
         {

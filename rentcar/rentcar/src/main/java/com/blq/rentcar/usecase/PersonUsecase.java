@@ -1,6 +1,7 @@
 package com.blq.rentcar.usecase;
 
 import com.blq.rentcar.models.Person;
+import com.blq.rentcar.models.response.PersonsDto;
 import com.blq.rentcar.models.response.ResponseInfo;
 import com.blq.rentcar.repository.PersonRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,11 +11,12 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 public class PersonUsecase {
     @Autowired
-    public PersonRepository personRepository;
+    private PersonRepository personRepository;
 
     public ResponseInfo<Object> addPerson(Person person)
     {
@@ -27,12 +29,9 @@ public class PersonUsecase {
 
             Person personData = this.personRepository.save(person);
 
-            if(personData.equals(person))
-            {
+            if (personData.getId() != null) {
                 responseInfo.setSuccess();
-            }
-            else
-            {
+            } else {
                 responseInfo.setBadRequestException("Save failed, kindly check your request");
             }
         }
@@ -51,7 +50,15 @@ public class PersonUsecase {
         {
             List<Person> persons = this.personRepository.findByIsActive(true);
 
-            responseInfo.setSuccess(persons);
+            List<PersonsDto> personsDtos = persons.stream()
+                    .map(person -> new PersonsDto(
+                            person.getName(),
+                            person.getEmail(),
+                            person.getAddress(),
+                            person.getPhoneNumber()))
+                    .collect(Collectors.toList());
+
+            responseInfo.setSuccess(personsDtos);
         }
         catch (Exception e)
         {
